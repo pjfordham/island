@@ -1,20 +1,19 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
 #include <random>
-#include <list>
+#include <deque>
 
 std::uniform_int_distribution<int> randomLocationRange(0, 150);
 std::random_device rd;
 std::mt19937 randomNumbers(rd());
 
-typedef std::list<sf::Vector2f> VertexList;
+typedef std::deque<sf::Vector2f> VertexList;
 
 VertexList initialVertices(int BORDER_SIZE, int WINDOW_SIZE, int height, int base) {
    VertexList vertices;
    vertices.emplace_back((float)BORDER_SIZE, height + (float)BORDER_SIZE);
    vertices.emplace_back(base + (float)BORDER_SIZE,  height + (float)BORDER_SIZE);
    vertices.emplace_back((float)WINDOW_SIZE/2.0, height*4 + (float)BORDER_SIZE);
-   vertices.emplace_back((float)BORDER_SIZE,  height + (float)BORDER_SIZE);
    return vertices;
 }
 
@@ -23,8 +22,7 @@ VertexList divideVertices( const VertexList &vertices, bool random ) {
    VertexList new_vertices;
 
    auto vertex = vertices.begin();
-   auto last = vertex;
-   vertex++;
+   auto last = vertices.end() - 1;
    while ( vertex != vertices.end() ) {
       float zero = last->x * 1.0 / 3.0 + vertex->x * 2.0 / 3.0;
       float one = last->y * 1.0 / 3.0 + vertex->y * 2.0 / 3.0;
@@ -52,7 +50,6 @@ VertexList divideVertices( const VertexList &vertices, bool random ) {
       last = vertex;
       vertex++;
    }
-   new_vertices.emplace_back( *last );
    return new_vertices;
 }
 
@@ -98,7 +95,8 @@ int main()
       for ( auto vertex : vertices ) {
          island.append(vertex);
       }
-
+      island.append( *vertices.begin() );
+      
       window.clear( sf::Color::Black );
       window.draw( island );
       window.display();
