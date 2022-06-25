@@ -1,7 +1,7 @@
 CC=gcc
 CXX=g++
 RM=rm -f
-CPPFLAGS=-O2 -std=c++11 
+CPPFLAGS=-O2 -std=c++17
 LDFLAGS=
 LDLIBS=-lsfml-graphics -lsfml-window -lsfml-system
 

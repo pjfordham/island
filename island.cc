@@ -3,17 +3,39 @@
 #include <random>
 #include <deque>
 
+
 std::uniform_int_distribution<int> randomLocationRange(0, 150);
 std::random_device rd;
 std::mt19937 randomNumbers(rd());
 
 typedef std::deque<sf::Vector2f> VertexList;
 
+template <int a, int b, int c, int d>
+sf::Vector2f transform( sf::Vector2f in) {
+   return sf::Vector2f( a * in.x + b * in.y , c*in.x + d*in.y);
+}
+sf::Vector2f translate( sf::Vector2f in, sf::Vector2f in2) {
+   return sf::Vector2f( in.x + in2.x , in.y + in2.y);
+}
+sf::Vector2f scale( sf::Vector2f in, float z) {
+   return sf::Vector2f( in.x * z , in.y *z);
+}
+
+auto I(sf::Vector2f x) { return transform < 1, 0, 0, 1>(x); }
+auto Scale2(sf::Vector2f x) { return transform < 2, 0, 0, 2>(x); }
+auto FlipY(sf::Vector2f x) { return transform < -1, 0, 0, 1>(x); }
+auto FlipX(sf::Vector2f x) { return transform < 1, 0, 0, -1>(x); }
+
+
+
 VertexList initialVertices(int BORDER_SIZE, int WINDOW_SIZE, int height, int base) {
    VertexList vertices;
-   vertices.emplace_back((float)BORDER_SIZE, height + (float)BORDER_SIZE);
-   vertices.emplace_back(base + (float)BORDER_SIZE,  height + (float)BORDER_SIZE);
-   vertices.emplace_back((float)WINDOW_SIZE/2.0, height*4 + (float)BORDER_SIZE);
+   auto one = I(sf::Vector2f((float)BORDER_SIZE, height + (float)BORDER_SIZE));
+   auto two = I(sf::Vector2f(base + (float)BORDER_SIZE,  height + (float)BORDER_SIZE));
+   auto thr = I(sf::Vector2f((float)WINDOW_SIZE/2.0, height*4 + (float)BORDER_SIZE));
+   vertices.push_back(one);
+   vertices.push_back(two);
+   vertices.push_back(thr);
    return vertices;
 }
 
@@ -84,10 +106,41 @@ int main()
                   vertices = divideVertices(vertices, random);
                }
                std::cout << vertices.size() << " vertexes." << std::endl;
-           }
-            if (event.key.code == sf::Keyboard::R){
-               random = !random;
             }
+            if (event.key.code == sf::Keyboard::X ){
+               for ( auto& vertex : vertices ) {
+                  vertex = FlipX( vertex );
+               }
+            }
+            if (event.key.code == sf::Keyboard::A ){
+               sf::Transform t;
+               t.scale(1.1,1.1);
+               for ( auto& vertex : vertices ) {
+                  vertex = t.transformPoint( vertex );
+               }
+            }
+              if (event.key.code == sf::Keyboard::Z ){
+               sf::Transform t;
+               t.scale(1/1.1,1/1.1);
+               for ( auto& vertex : vertices ) {
+                  vertex = t.transformPoint( vertex );
+               }
+            }
+            if (event.key.code == sf::Keyboard::R ){
+               sf::Transform t;
+               t.rotate(1);
+               for ( auto& vertex : vertices ) {
+                  vertex = t.transformPoint( vertex );
+               }
+            }
+          if (event.key.code == sf::Keyboard::Y ){
+               for ( auto& vertex : vertices ) {
+                  vertex = FlipY( vertex );
+               }
+            }
+            // if (event.key.code == sf::Keyboard::R){
+            //    random = !random;
+            // }
          }
       }
 
@@ -96,8 +149,11 @@ int main()
          island.append(vertex);
       }
       island.append( *vertices.begin() );
-      
+
       window.clear( sf::Color::Black );
+
+      window.setView(   sf::View(sf::FloatRect(- WINDOW_SIZE, -4 * height + 2 * BORDER_SIZE, 2*WINDOW_SIZE, 2*4 * height + 2 * BORDER_SIZE)));
+      window.draw( sf::RectangleShape(  sf::Vector2f(20, 20)));
       window.draw( island );
       window.display();
    }
