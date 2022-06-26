@@ -10,48 +10,34 @@ std::mt19937 randomNumbers(rd());
 
 typedef std::deque<sf::Vector2f> VertexList;
 
-template <int a, int b, int c, int d>
-sf::Vector2f transform( sf::Vector2f in) {
-   return sf::Vector2f( a * in.x + b * in.y , c*in.x + d*in.y);
-}
-sf::Vector2f translate( sf::Vector2f in, sf::Vector2f in2) {
-   return sf::Vector2f( in.x + in2.x , in.y + in2.y);
-}
-sf::Vector2f scale( sf::Vector2f in, float z) {
-   return sf::Vector2f( in.x * z , in.y *z);
-}
-
-auto I(sf::Vector2f x) { return transform < 1, 0, 0, 1>(x); }
-auto Scale2(sf::Vector2f x) { return transform < 2, 0, 0, 2>(x); }
-auto FlipY(sf::Vector2f x) { return transform < -1, 0, 0, 1>(x); }
-auto FlipX(sf::Vector2f x) { return transform < 1, 0, 0, -1>(x); }
-
-
-
 VertexList initialVertices(int BORDER_SIZE, int WINDOW_SIZE, int height, int base) {
    VertexList vertices;
-   auto one = I(sf::Vector2f((float)BORDER_SIZE, height + (float)BORDER_SIZE));
-   auto two = I(sf::Vector2f(base + (float)BORDER_SIZE,  height + (float)BORDER_SIZE));
-   auto thr = I(sf::Vector2f((float)WINDOW_SIZE/2.0, height*4 + (float)BORDER_SIZE));
+   auto one = sf::Vector2f((float)BORDER_SIZE, height + (float)BORDER_SIZE);
+   auto two = sf::Vector2f(base + (float)BORDER_SIZE,  height + (float)BORDER_SIZE);
+   auto thr = sf::Vector2f((float)WINDOW_SIZE/2.0, height*4 + (float)BORDER_SIZE);
    vertices.push_back(one);
    vertices.push_back(two);
    vertices.push_back(thr);
    return vertices;
 }
 
+const float ONE_THIRD = 1.f / 3.0f;
+const float TWO_THIRDS = 2.0f / 3.0f;
+const float ONE_HALF = 1.0f / 2.0f;
+
 VertexList divideVertices( const VertexList &vertices, bool random ) {
 
    VertexList new_vertices;
 
    auto vertex = vertices.begin();
-   auto last = vertices.end() - 1;
    while ( vertex != vertices.end() ) {
-      float zero = last->x * 1.0 / 3.0 + vertex->x * 2.0 / 3.0;
-      float one = last->y * 1.0 / 3.0 + vertex->y * 2.0 / 3.0;
 
-      // Perp vector
-      float deltay = (vertex->x - last->x) * 1.0 / 3.0 * sqrt(3) / 2.0;
-      float deltax = (last->y - vertex->y) * 1.0 / 3.0 * sqrt(3) / 2.0;
+      auto next = (vertex+1 == vertices.end() ) ? vertices.begin() : vertex+1;
+
+      auto delta = *next - *vertex;
+
+      sf::Transform two;
+      two.translate( delta * ONE_THIRD );
 
       int i;
       if ( random ) {
@@ -60,16 +46,18 @@ VertexList divideVertices( const VertexList &vertices, bool random ) {
          i = 100;
       }
 
-      float two = last->x * 1.0 / 2.0 + vertex->x * 1.0 / 2.0 - deltax * ( i * 0.01 );
-      float three = last->y * 1.0 / 2.0 + vertex->y * 1.0 / 2.0 - deltay * ( i * 0.01 );
+      sf::Transform three;
+      auto perp = sf::Transform().rotate(-90).transformPoint( delta * ONE_THIRD * ( (float)sqrt(3) / 2.0f ) );
+      three.translate( delta * ONE_HALF );
+      three.translate( perp );
 
-      float four = last->x * 2.0 / 3.0 + vertex->x * 1.0 / 3.0;
-      float five = last->y * 2.0 / 3.0 + vertex->y * 1.0 / 3.0;
-      new_vertices.emplace_back( *last );
-      new_vertices.emplace_back(four, five);
-      new_vertices.emplace_back(two, three);
-      new_vertices.emplace_back(zero, one);
-      last = vertex;
+      sf::Transform four;
+      four.translate( delta * TWO_THIRDS );
+
+      new_vertices.push_back(  *vertex );
+      new_vertices.push_back( two.transformPoint( *vertex ));
+      new_vertices.push_back( three.transformPoint( *vertex ));
+      new_vertices.push_back( four.transformPoint( *vertex ));
       vertex++;
    }
    return new_vertices;
@@ -98,49 +86,49 @@ int main()
          if (event.type == sf::Event::KeyPressed){
             if (event.key.code == sf::Keyboard::Escape){
                return 0;
-            }
-            if (event.key.code == sf::Keyboard::Space){
+            } else if (event.key.code == sf::Keyboard::Space){
                if (vertices.size() > 1000000 || vertices.empty() ) {
                   vertices = initialVertices( BORDER_SIZE, WINDOW_SIZE, height, base);
                } else {
                   vertices = divideVertices(vertices, random);
                }
-               std::cout << vertices.size() << " vertexes." << std::endl;
-            }
-            if (event.key.code == sf::Keyboard::X ){
-               for ( auto& vertex : vertices ) {
-                  vertex = FlipX( vertex );
-               }
-            }
-            if (event.key.code == sf::Keyboard::A ){
+               std::cout << vertices.size() << " vertices." << std::endl;
+            } else {
                sf::Transform t;
-               t.scale(1.1,1.1);
+               if (event.key.code == sf::Keyboard::Right){
+                  t.translate(1,0);
+               }
+               if (event.key.code == sf::Keyboard::Left ){
+                  t.translate(-1,0);
+               }
+               if (event.key.code == sf::Keyboard::Down ){
+                  t.translate(0,1);
+               }
+               if (event.key.code == sf::Keyboard::Up ){
+                  t.translate(0,-1);
+               }
+               if (event.key.code == sf::Keyboard::Add ){
+                  t.scale(1.1,1.1);
+               }
+               if (event.key.code == sf::Keyboard::Subtract ){
+                  t.scale(1/1.1,1/1.1);
+               }
+               if (event.key.code == sf::Keyboard::X ){
+                  t.scale(1,-1);
+               }
+               if (event.key.code == sf::Keyboard::Y ){
+                  t.scale(-1,1);
+               }
+               if (event.key.code == sf::Keyboard::R ){
+                  t.rotate(1);
+               }
                for ( auto& vertex : vertices ) {
                   vertex = t.transformPoint( vertex );
                }
+               // if (event.key.code == sf::Keyboard::R){
+               //    random = !random;
+               // }
             }
-              if (event.key.code == sf::Keyboard::Z ){
-               sf::Transform t;
-               t.scale(1/1.1,1/1.1);
-               for ( auto& vertex : vertices ) {
-                  vertex = t.transformPoint( vertex );
-               }
-            }
-            if (event.key.code == sf::Keyboard::R ){
-               sf::Transform t;
-               t.rotate(1);
-               for ( auto& vertex : vertices ) {
-                  vertex = t.transformPoint( vertex );
-               }
-            }
-          if (event.key.code == sf::Keyboard::Y ){
-               for ( auto& vertex : vertices ) {
-                  vertex = FlipY( vertex );
-               }
-            }
-            // if (event.key.code == sf::Keyboard::R){
-            //    random = !random;
-            // }
          }
       }
 
@@ -152,8 +140,12 @@ int main()
 
       window.clear( sf::Color::Black );
 
-      window.setView(   sf::View(sf::FloatRect(- WINDOW_SIZE, -4 * height + 2 * BORDER_SIZE, 2*WINDOW_SIZE, 2*4 * height + 2 * BORDER_SIZE)));
-      window.draw( sf::RectangleShape(  sf::Vector2f(20, 20)));
+      sf::RectangleShape origin;
+      origin.setSize(sf::Vector2f(20, 20));
+      origin.setPosition(-10, -10);
+
+      window.setView( sf::View(sf::FloatRect(- WINDOW_SIZE, -4 * height + 2 * BORDER_SIZE, 2*WINDOW_SIZE, 2*4 * height + 2 * BORDER_SIZE)));
+      window.draw( origin );
       window.draw( island );
       window.display();
    }
