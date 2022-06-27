@@ -33,11 +33,7 @@ VertexList divideVertices( const VertexList &vertices, bool random ) {
    while ( vertex != vertices.end() ) {
 
       auto next = (vertex+1 == vertices.end() ) ? vertices.begin() : vertex+1;
-
-      auto delta = *next - *vertex;
-
-      sf::Transform two;
-      two.translate( delta * ONE_THIRD );
+      auto delta = (*next - *vertex) * ONE_THIRD;
 
       int i;
       if ( random ) {
@@ -46,18 +42,15 @@ VertexList divideVertices( const VertexList &vertices, bool random ) {
          i = 100;
       }
 
-      sf::Transform three;
-      auto perp = sf::Transform().rotate(-90).transformPoint( delta * ONE_THIRD * ( (float)sqrt(3) / 2.0f ) );
-      three.translate( delta * ONE_HALF );
-      three.translate( perp );
+      auto top = sf::Transform()
+	 .translate( delta )
+	 .rotate(-60)
+	 .transformPoint( delta );;
 
-      sf::Transform four;
-      four.translate( delta * TWO_THIRDS );
-
-      new_vertices.push_back(  *vertex );
-      new_vertices.push_back( two.transformPoint( *vertex ));
-      new_vertices.push_back( three.transformPoint( *vertex ));
-      new_vertices.push_back( four.transformPoint( *vertex ));
+      new_vertices.push_back( *vertex );
+      new_vertices.push_back( *vertex + delta );
+      new_vertices.push_back( *vertex + top );
+      new_vertices.push_back( *vertex + delta * 2.0f );
       vertex++;
    }
    return new_vertices;
