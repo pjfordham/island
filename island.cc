@@ -11,11 +11,7 @@ VertexList initialVertices(int BORDER_SIZE, int WINDOW_SIZE) {
    sf::Vector2f two = sf::Transform().rotate(120).transformPoint( one );
    sf::Vector2f thr = sf::Transform().rotate(120).transformPoint( two );
 
-   VertexList vertices;
-   vertices.push_back(one);
-   vertices.push_back(two);
-   vertices.push_back(thr);
-   return vertices;
+   return {one, two, thr};
 }
 
 const float ONE_THIRD = 1.f / 3.0f;
