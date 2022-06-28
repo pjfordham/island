@@ -1,20 +1,17 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
-#include <random>
 #include <deque>
-
-
-std::uniform_int_distribution<int> randomLocationRange(0, 150);
-std::random_device rd;
-std::mt19937 randomNumbers(rd());
+#include <math.h>
 
 typedef std::deque<sf::Vector2f> VertexList;
 
-VertexList initialVertices(int BORDER_SIZE, int WINDOW_SIZE, int height, int base) {
+VertexList initialVertices(int BORDER_SIZE, int WINDOW_SIZE) {
+
+   sf::Vector2f one(0,WINDOW_SIZE - BORDER_SIZE);
+   sf::Vector2f two = sf::Transform().rotate(120).transformPoint( one );
+   sf::Vector2f thr = sf::Transform().rotate(120).transformPoint( two );
+
    VertexList vertices;
-   auto one = sf::Vector2f((float)BORDER_SIZE, height + (float)BORDER_SIZE);
-   auto two = sf::Vector2f(base + (float)BORDER_SIZE,  height + (float)BORDER_SIZE);
-   auto thr = sf::Vector2f((float)WINDOW_SIZE/2.0, height*4 + (float)BORDER_SIZE);
    vertices.push_back(one);
    vertices.push_back(two);
    vertices.push_back(thr);
@@ -25,7 +22,7 @@ const float ONE_THIRD = 1.f / 3.0f;
 const float TWO_THIRDS = 2.0f / 3.0f;
 const float ONE_HALF = 1.0f / 2.0f;
 
-VertexList divideVertices( const VertexList &vertices, bool random ) {
+VertexList divideVertices( const VertexList &vertices ) {
 
    VertexList new_vertices;
 
@@ -35,16 +32,9 @@ VertexList divideVertices( const VertexList &vertices, bool random ) {
       auto next = (vertex+1 == vertices.end() ) ? vertices.begin() : vertex+1;
       auto delta = (*next - *vertex) * ONE_THIRD;
 
-      int i;
-      if ( random ) {
-         i = 75 - randomLocationRange( randomNumbers );
-      } else {
-         i = 100;
-      }
-
       auto top = sf::Transform()
 	 .translate( delta )
-	 .rotate(-60)
+	 .rotate( -60 )
 	 .transformPoint( delta );;
 
       new_vertices.push_back( *vertex );
@@ -59,16 +49,11 @@ VertexList divideVertices( const VertexList &vertices, bool random ) {
 int main()
 {
    const int WINDOW_SIZE = 800;
-   const int BORDER_SIZE = 20;
-
-   float base = WINDOW_SIZE - 2 * BORDER_SIZE;
-   float height = base * sqrt(3) / 2.0 / 3.0;
+   const int BORDER_SIZE = 50;
 
    VertexList vertices;
 
-   bool random = false;
-
-   sf::RenderWindow window(sf::VideoMode(WINDOW_SIZE, 4 * height + 2 * BORDER_SIZE), "Island");
+   sf::RenderWindow window(sf::VideoMode(WINDOW_SIZE, WINDOW_SIZE), "Island");
 
    while (window.isOpen()) {
       sf::Event event;
@@ -81,9 +66,9 @@ int main()
                return 0;
             } else if (event.key.code == sf::Keyboard::Space){
                if (vertices.size() > 1000000 || vertices.empty() ) {
-                  vertices = initialVertices( BORDER_SIZE, WINDOW_SIZE, height, base);
+                  vertices = initialVertices( BORDER_SIZE, WINDOW_SIZE );
                } else {
-                  vertices = divideVertices(vertices, random);
+                  vertices = divideVertices(vertices);
                }
                std::cout << vertices.size() << " vertices." << std::endl;
             } else {
@@ -118,9 +103,6 @@ int main()
                for ( auto& vertex : vertices ) {
                   vertex = t.transformPoint( vertex );
                }
-               // if (event.key.code == sf::Keyboard::R){
-               //    random = !random;
-               // }
             }
          }
       }
@@ -137,7 +119,8 @@ int main()
       origin.setSize(sf::Vector2f(20, 20));
       origin.setPosition(-10, -10);
 
-      window.setView( sf::View(sf::FloatRect(- WINDOW_SIZE, -4 * height + 2 * BORDER_SIZE, 2*WINDOW_SIZE, 2*4 * height + 2 * BORDER_SIZE)));
+      window.setView( sf::View(sf::FloatRect(-WINDOW_SIZE, -WINDOW_SIZE,
+					     2*WINDOW_SIZE, 2*WINDOW_SIZE)));
       window.draw( origin );
       window.draw( island );
       window.display();
