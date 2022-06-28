@@ -5,7 +5,7 @@
 
 typedef std::vector<sf::Vector2f> VertexList;
 
-VertexList initialVertices(int BORDER_SIZE, int WINDOW_SIZE) {
+static VertexList initialVertices(int BORDER_SIZE, int WINDOW_SIZE) {
 
    sf::Vector2f one(0,WINDOW_SIZE - BORDER_SIZE);
    sf::Vector2f two = sf::Transform().rotate(120).transformPoint( one );
@@ -14,19 +14,16 @@ VertexList initialVertices(int BORDER_SIZE, int WINDOW_SIZE) {
    return {one, two, thr};
 }
 
-const float ONE_THIRD = 1.f / 3.0f;
-const float TWO_THIRDS = 2.0f / 3.0f;
-const float ONE_HALF = 1.0f / 2.0f;
-
-VertexList divideVertices( const VertexList &vertices ) {
+static VertexList divideVertices( const VertexList &vertices ) {
 
    VertexList new_vertices;
 
-   auto vertex = vertices.begin();
-   while ( vertex != vertices.end() ) {
+   for (auto vertex = vertices.begin();
+        vertex != vertices.end();
+        vertex++) {
 
       auto next = (vertex+1 == vertices.end() ) ? vertices.begin() : vertex+1;
-      auto delta = (*next - *vertex) * ONE_THIRD;
+      auto delta = (*next - *vertex) * 1.0f / 3.0f;
 
       auto top = sf::Transform()
 	 .translate( delta )
@@ -37,7 +34,6 @@ VertexList divideVertices( const VertexList &vertices ) {
       new_vertices.push_back( *vertex + delta );
       new_vertices.push_back( *vertex + top );
       new_vertices.push_back( *vertex + delta * 2.0f );
-      vertex++;
    }
    return new_vertices;
 }
@@ -71,29 +67,21 @@ int main()
                sf::Transform t;
                if (event.key.code == sf::Keyboard::Right){
                   t.translate(1,0);
-               }
-               if (event.key.code == sf::Keyboard::Left ){
+               } else if (event.key.code == sf::Keyboard::Left ){
                   t.translate(-1,0);
-               }
-               if (event.key.code == sf::Keyboard::Down ){
+               } else if (event.key.code == sf::Keyboard::Down ){
                   t.translate(0,1);
-               }
-               if (event.key.code == sf::Keyboard::Up ){
+               } else if (event.key.code == sf::Keyboard::Up ){
                   t.translate(0,-1);
-               }
-               if (event.key.code == sf::Keyboard::Add ){
+               } else if (event.key.code == sf::Keyboard::Add ){
                   t.scale(1.1,1.1);
-               }
-               if (event.key.code == sf::Keyboard::Subtract ){
+               } else if (event.key.code == sf::Keyboard::Subtract ){
                   t.scale(1/1.1,1/1.1);
-               }
-               if (event.key.code == sf::Keyboard::X ){
+               } else if (event.key.code == sf::Keyboard::X ){
                   t.scale(1,-1);
-               }
-               if (event.key.code == sf::Keyboard::Y ){
+               } else if (event.key.code == sf::Keyboard::Y ){
                   t.scale(-1,1);
-               }
-               if (event.key.code == sf::Keyboard::R ){
+               } else if (event.key.code == sf::Keyboard::R ){
                   t.rotate(1);
                }
                for ( auto& vertex : vertices ) {
