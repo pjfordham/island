@@ -1,9 +1,9 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
-#include <deque>
+#include <vector>
 #include <math.h>
 
-typedef std::deque<sf::Vector2f> VertexList;
+typedef std::vector<sf::Vector2f> VertexList;
 
 VertexList initialVertices(int BORDER_SIZE, int WINDOW_SIZE) {
 
@@ -111,7 +111,9 @@ int main()
       for ( auto vertex : vertices ) {
          island.append(vertex);
       }
-      island.append( *vertices.begin() );
+      if ( vertices.begin() != vertices.end() ) {
+         island.append( *vertices.begin() );
+      }
 
       window.clear( sf::Color::Black );
 
