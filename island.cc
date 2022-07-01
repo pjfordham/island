@@ -2,14 +2,18 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <math.h>
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
 
-typedef std::vector<sf::Vector2f> VertexList;
+float PI = M_PI;
+
+typedef std::vector<Eigen::Vector2f> VertexList;
 
 static VertexList initialVertices(int BORDER_SIZE, int WINDOW_SIZE) {
 
-   sf::Vector2f one(0,WINDOW_SIZE - BORDER_SIZE);
-   sf::Vector2f two = sf::Transform().rotate(120).transformPoint( one );
-   sf::Vector2f thr = sf::Transform().rotate(120).transformPoint( two );
+   Eigen::Vector2f one(0,WINDOW_SIZE - BORDER_SIZE);
+   Eigen::Vector2f two = Eigen::Rotation2D<float>( 2.0f * PI / 3.0f) * one;
+   Eigen::Vector2f thr = Eigen::Rotation2D<float>( 2.0f * PI / 3.0f) * two;
 
    return {one, two, thr};
 }
@@ -25,10 +29,10 @@ static VertexList divideVertices( const VertexList &vertices ) {
       auto next = (vertex+1 == vertices.end() ) ? vertices.begin() : vertex+1;
       auto delta = (*next - *vertex) * 1.0f / 3.0f;
 
-      auto top = sf::Transform()
-	 .translate( delta )
-	 .rotate( -60 )
-	 .transformPoint( delta );;
+      auto top =
+         Eigen::Translation<float,2>( delta ) *
+         Eigen::Rotation2D<float>( - 2.0f * PI / 6.0f) *
+         delta;
 
       new_vertices.push_back( *vertex );
       new_vertices.push_back( *vertex + delta );
@@ -64,28 +68,28 @@ int main()
                }
                std::cout << vertices.size() << " vertices." << std::endl;
             } else {
-               sf::Transform t;
+               auto t = Eigen::Transform<float,2,Eigen::Affine>::Identity();
                if (event.key.code == sf::Keyboard::Right){
-                  t.translate(1,0);
+                  t.translate(Eigen::Vector2f(1,0));
                } else if (event.key.code == sf::Keyboard::Left ){
-                  t.translate(-1,0);
+                  t.translate(Eigen::Vector2f(-1,0));
                } else if (event.key.code == sf::Keyboard::Down ){
-                  t.translate(0,1);
+                  t.translate(Eigen::Vector2f(0,1));
                } else if (event.key.code == sf::Keyboard::Up ){
-                  t.translate(0,-1);
+                  t.translate(Eigen::Vector2f(0,-1));
                } else if (event.key.code == sf::Keyboard::Add ){
-                  t.scale(1.1,1.1);
+                  t.scale(1.1);
                } else if (event.key.code == sf::Keyboard::Subtract ){
-                  t.scale(1/1.1,1/1.1);
+                  t.scale(1/1.1);
                } else if (event.key.code == sf::Keyboard::X ){
-                  t.scale(1,-1);
+                  t.scale(Eigen::Vector2f(1,-1));
                } else if (event.key.code == sf::Keyboard::Y ){
-                  t.scale(-1,1);
+                  t.scale(Eigen::Vector2f(-1,1));
                } else if (event.key.code == sf::Keyboard::R ){
-                  t.rotate(1);
+                  t.rotate( 2.0f * PI / 360.0f);
                }
                for ( auto& vertex : vertices ) {
-                  vertex = t.transformPoint( vertex );
+                  vertex = t * vertex;
                }
             }
          }
@@ -93,10 +97,11 @@ int main()
 
       sf::VertexArray island(sf::LinesStrip, 0);
       for ( auto vertex : vertices ) {
-         island.append(vertex);
+         island.append(sf::Vector2f(vertex(0),vertex(1)));
       }
       if ( vertices.begin() != vertices.end() ) {
-         island.append( *vertices.begin() );
+         auto &v =*vertices.begin();
+         island.append( sf::Vector2f( v(0), v(1)) );
       }
 
       window.clear( sf::Color::Black );
