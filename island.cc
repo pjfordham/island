@@ -6,14 +6,48 @@
 #include <Eigen/Geometry>
 
 float PI = M_PI;
+float fcos(float x) { return cos(x); }
+float fsin(float x) { return sin(x); }
 
 typedef std::vector<Eigen::Vector2f> VertexList;
+
+float d120 = 2.0f * PI / 3.0f;
+float d60 = -PI / 3.0f;
+float d1 = 2.0f * PI / 3.0f / 360.0f;
+
+Eigen::Matrix2f rotate120{
+   { fcos(d120),-fsin(d120) },
+   { fsin(d120), fcos(d120) } };
+
+Eigen::Matrix2f rotate60{
+   { fcos(d60),-fsin(d60) },
+   { fsin(d60), fcos(d60) } };
+
+Eigen::Matrix2f rotate1{
+   { fcos(d1),-fsin(d1) },
+   { fsin(d1), fcos(d1) } };
+
+Eigen::Matrix2f flipX{
+   { -1,0 },
+   { 0,1 } };
+
+Eigen::Matrix2f flipY{
+   { 1, 0 },
+   { 0, -1  } };
+
+Eigen::Matrix2f zoomIn{
+   { 1.1, 0 },
+   { 0, 1.1  } };
+
+Eigen::Matrix2f zoomOut{
+   { 1/1.1, 0 },
+   { 0, 1/1.1  } };
 
 static VertexList initialVertices(int BORDER_SIZE, int WINDOW_SIZE) {
 
    Eigen::Vector2f one(0,WINDOW_SIZE - BORDER_SIZE);
-   Eigen::Vector2f two = Eigen::Rotation2D<float>( 2.0f * PI / 3.0f) * one;
-   Eigen::Vector2f thr = Eigen::Rotation2D<float>( 2.0f * PI / 3.0f) * two;
+   Eigen::Vector2f two = rotate120 * one;
+   Eigen::Vector2f thr = rotate120 * two;
 
    return {one, two, thr};
 }
@@ -31,7 +65,7 @@ static VertexList divideVertices( const VertexList &vertices ) {
 
       auto top =
          Eigen::Translation<float,2>( delta ) *
-         Eigen::Rotation2D<float>( - 2.0f * PI / 6.0f) *
+         rotate60 *
          delta;
 
       new_vertices.push_back( *vertex );
@@ -68,25 +102,26 @@ int main()
                }
                std::cout << vertices.size() << " vertices." << std::endl;
             } else {
-               auto t = Eigen::Transform<float,2,Eigen::Affine>::Identity();
-               if (event.key.code == sf::Keyboard::Right){
-                  t.translate(Eigen::Vector2f(1,0));
-               } else if (event.key.code == sf::Keyboard::Left ){
-                  t.translate(Eigen::Vector2f(-1,0));
-               } else if (event.key.code == sf::Keyboard::Down ){
-                  t.translate(Eigen::Vector2f(0,1));
-               } else if (event.key.code == sf::Keyboard::Up ){
-                  t.translate(Eigen::Vector2f(0,-1));
-               } else if (event.key.code == sf::Keyboard::Add ){
-                  t.scale(1.1);
+               auto t = Eigen::Matrix2f();
+               // if (event.key.code == sf::Keyboard::Right){
+               //    t.translate(Eigen::Vector2f(1,0));
+               // } else if (event.key.code == sf::Keyboard::Left ){
+               //    t.translate(Eigen::Vector2f(-1,0));
+               // } else if (event.key.code == sf::Keyboard::Down ){
+               //    t.translate(Eigen::Vector2f(0,1));
+               // } else if (event.key.code == sf::Keyboard::Up ){
+               //    t.translate(Eigen::Vector2f(0,-1));
+               // } else
+               if (event.key.code == sf::Keyboard::Add ){
+                  t = zoomIn;
                } else if (event.key.code == sf::Keyboard::Subtract ){
-                  t.scale(1/1.1);
+                  t = zoomOut;
                } else if (event.key.code == sf::Keyboard::X ){
-                  t.scale(Eigen::Vector2f(1,-1));
+                  t = flipX;
                } else if (event.key.code == sf::Keyboard::Y ){
-                  t.scale(Eigen::Vector2f(-1,1));
+                  t = flipY;
                } else if (event.key.code == sf::Keyboard::R ){
-                  t.rotate( 2.0f * PI / 360.0f);
+                  t = rotate1;
                }
                for ( auto& vertex : vertices ) {
                   vertex = t * vertex;
