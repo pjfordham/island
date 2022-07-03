@@ -3,7 +3,6 @@
 #include <vector>
 #include <math.h>
 #include <Eigen/Dense>
-#include <Eigen/Geometry>
 
 float PI = M_PI;
 float fcos(float x) { return cos(x); }
@@ -48,7 +47,7 @@ Eigen::Matrix3f scale(float v) {
    return x;
 }
 
-static VertexList initialVertices(int BORDER_SIZE, int WINDOW_SIZE) {
+static VertexList initialVerticesIsland(int BORDER_SIZE, int WINDOW_SIZE) {
 
    Eigen::Vector3f one(0,WINDOW_SIZE - BORDER_SIZE, 1);
    Eigen::Vector3f two = rotate(120.0) * one;
@@ -57,7 +56,17 @@ static VertexList initialVertices(int BORDER_SIZE, int WINDOW_SIZE) {
    return {one, two, thr};
 }
 
-static VertexList divideVertices( const VertexList &vertices ) {
+static VertexList initialVerticesSnowflake(int BORDER_SIZE, int WINDOW_SIZE) {
+
+   Eigen::Vector3f one = rotate(45.0) * Eigen::Vector3f(0,WINDOW_SIZE*(3.0/4.0) - BORDER_SIZE, 1);
+   Eigen::Vector3f two = rotate(90.0) * one;
+   Eigen::Vector3f thr = rotate(90.0) * two;
+   Eigen::Vector3f fou = rotate(90.0) * thr;
+
+   return {one, two, thr, fou};
+}
+
+static VertexList divideVerticesIsland( const VertexList &vertices ) {
 
    VertexList new_vertices;
 
@@ -71,7 +80,7 @@ static VertexList divideVertices( const VertexList &vertices ) {
       // We need this to be 1 for translations to work
       delta[2] = 1;
 
-      // dont' use auto here since the lazy evaluator does something weird.
+      // don't use auto here since the lazy evaluator does something weird.
       Eigen::Vector3f top =
 	 translate( delta ) *
 	 rotate(-60.0) *
@@ -81,6 +90,52 @@ static VertexList divideVertices( const VertexList &vertices ) {
       new_vertices.push_back( translate( delta ) * *vertex );
       new_vertices.push_back( translate( top ) * *vertex );
       new_vertices.push_back( translate( scale(2.0) * delta ) * *vertex );
+   }
+   return new_vertices;
+}
+
+static VertexList divideVerticesSnowflake( const VertexList &vertices ) {
+
+   VertexList new_vertices;
+
+   for (auto vertex = vertices.begin();
+	vertex != vertices.end();
+	vertex++) {
+
+      auto next = (vertex+1 == vertices.end() ) ? vertices.begin() : vertex+1;
+      Eigen::Vector3f delta = (*next - *vertex) / 4.0f;
+
+      // We need this to be 1 for translations to work
+      delta[2] = 1;
+
+      // don't use auto here since the lazy evaluator does something weird.
+      Eigen::Vector3f up = rotate(-90.0) * delta;
+      Eigen::Vector3f down = rotate(90.0) * delta;
+
+      Eigen::Vector3f vert = *vertex;
+      new_vertices.push_back( vert );
+
+      vert = translate( delta ) * vert;
+      new_vertices.push_back( vert );
+
+      vert = translate( up ) * vert;
+      new_vertices.push_back( vert );
+
+      vert = translate( delta ) * vert;
+      new_vertices.push_back( vert );
+
+      vert = translate( down ) * vert;
+      new_vertices.push_back( vert );
+
+      vert = translate( down ) * vert;
+      new_vertices.push_back( vert );
+
+      vert = translate( delta ) * vert;
+      new_vertices.push_back( vert );
+
+      vert = translate( up ) * vert;
+      new_vertices.push_back( vert );
+
    }
    return new_vertices;
 }
@@ -103,11 +158,18 @@ int main()
 	 if (event.type == sf::Event::KeyPressed){
 	    if (event.key.code == sf::Keyboard::Escape){
 	       return 0;
-	    } else if (event.key.code == sf::Keyboard::Space){
+	    } else if (event.key.code == sf::Keyboard::I){
 	       if (vertices.size() > 1000000 || vertices.empty() ) {
-		  vertices = initialVertices( BORDER_SIZE, WINDOW_SIZE );
+		  vertices = initialVerticesIsland( BORDER_SIZE, WINDOW_SIZE );
 	       } else {
-		  vertices = divideVertices(vertices);
+		  vertices = divideVerticesIsland(vertices);
+	       }
+	       std::cout << vertices.size() << " vertices." << std::endl;
+	    } else if (event.key.code == sf::Keyboard::S){
+	       if (vertices.size() > 1000000 || vertices.empty() ) {
+		  vertices = initialVerticesSnowflake( BORDER_SIZE, WINDOW_SIZE );
+	       } else {
+		  vertices = divideVerticesSnowflake(vertices);
 	       }
 	       std::cout << vertices.size() << " vertices." << std::endl;
 	    } else {
