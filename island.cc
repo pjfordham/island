@@ -11,24 +11,16 @@ float fsin(float x) { return sin(x); }
 
 typedef std::vector<Eigen::Vector3f> VertexList;
 
-float d120 = 2.0f * PI / 3.0f;
-float d60 = -PI / 3.0f;
-float d1 = 2.0f * PI / 3.0f / 360.0f;
-
-Eigen::Matrix3f rotate120{
-   { fcos(d120),-fsin(d120),0 },
-   { fsin(d120), fcos(d120),0 },
-   {0,0,1} };
-
-Eigen::Matrix3f rotate60{
-   { fcos(d60),-fsin(d60),0 },
-   { fsin(d60), fcos(d60),0 },
-   {0,0,1} };
-
-Eigen::Matrix3f rotate1{
-   { fcos(d1),-fsin(d1), 0 },
-   { fsin(d1), fcos(d1), 0 },
-   {0,0,1} };
+Eigen::Matrix3f rotate(float v) {
+   const float d1 = 2.0f * PI / 360.0f;
+   float rads = v * d1;
+   Eigen::Matrix3f x{
+      { fcos(rads),-fsin(rads),0 },
+      { fsin(rads), fcos(rads),0 },
+      {0,0,1}
+   };
+   return x;
+}
 
 Eigen::Matrix3f flipX{
    { -1,0,0 },
@@ -40,28 +32,27 @@ Eigen::Matrix3f flipY{
    { 0, -1,0  },
    {0,0,1} };
 
-Eigen::Matrix3f zoomIn{
-   { 1.1, 0,0 },
-   { 0, 1.1,0  },
-   {0,0,1} };
-
-Eigen::Matrix3f zoomOut{
-   { 1/1.1, 0,0 },
-   { 0, 1/1.1,0  },
-   {0,0,1 } };
-
 Eigen::Matrix3f translate(Eigen::Vector3f v) {
-   Eigen::Matrix3f x{ { 1,0,v(0) },
-	    { 0,1,v(1) },
-	    { 0,0,1 } };
+   Eigen::Matrix3f x{
+      { 1,0,v(0) },
+      { 0,1,v(1) },
+      { 0,0,1 } };
+   return x;
+}
+
+Eigen::Matrix3f scale(float v) {
+   Eigen::Matrix3f x{
+      { v,0,0 } ,
+      { 0,v,0 },
+      { 0,0,1 } };
    return x;
 }
 
 static VertexList initialVertices(int BORDER_SIZE, int WINDOW_SIZE) {
 
    Eigen::Vector3f one(0,WINDOW_SIZE - BORDER_SIZE, 1);
-   Eigen::Vector3f two = rotate120 * one;
-   Eigen::Vector3f thr = rotate120 * two;
+   Eigen::Vector3f two = rotate(120.0) * one;
+   Eigen::Vector3f thr = rotate(120.0) * two;
 
    return {one, two, thr};
 }
@@ -80,15 +71,16 @@ static VertexList divideVertices( const VertexList &vertices ) {
       // We need this to be 1 for translations to work
       delta[2] = 1;
 
-      auto top =
+      // dont' use auto here since the lazy evaluator does something weird.
+      Eigen::Vector3f top =
 	 translate( delta ) *
-	 rotate60 *
+	 rotate(-60.0) *
 	 delta;
 
       new_vertices.push_back( *vertex );
-      new_vertices.push_back( *vertex + delta );
-      new_vertices.push_back( *vertex + top );
-      new_vertices.push_back( *vertex + delta * 2.0f );
+      new_vertices.push_back( translate( delta ) * *vertex );
+      new_vertices.push_back( translate( top ) * *vertex );
+      new_vertices.push_back( translate( scale(2.0) * delta ) * *vertex );
    }
    return new_vertices;
 }
@@ -116,9 +108,6 @@ int main()
 		  vertices = initialVertices( BORDER_SIZE, WINDOW_SIZE );
 	       } else {
 		  vertices = divideVertices(vertices);
-		  for ( auto& vertex : vertices ) {
-		     vertex[2] = 1;
-		  }
 	       }
 	       std::cout << vertices.size() << " vertices." << std::endl;
 	    } else {
@@ -132,15 +121,15 @@ int main()
 	       } else if (event.key.code == sf::Keyboard::Up ){
 		  t = translate(Eigen::Vector3f(0,-1,1));
 	       } else if (event.key.code == sf::Keyboard::Add ){
-		  t = zoomIn;
+		  t = scale(1.1);
 	       } else if (event.key.code == sf::Keyboard::Subtract ){
-		  t = zoomOut;
+		  t = scale(1.0/1.1);
 	       } else if (event.key.code == sf::Keyboard::X ){
 		  t = flipX;
 	       } else if (event.key.code == sf::Keyboard::Y ){
 		  t = flipY;
 	       } else if (event.key.code == sf::Keyboard::R ){
-		  t = rotate1;
+		  t = rotate(1.0);
 	       }
 	       for ( auto& vertex : vertices ) {
 		  vertex = t * vertex;
